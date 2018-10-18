@@ -1,0 +1,11 @@
+jpiVersion: v1
+kind: Pod
+metadata:
+  name: on-default
+spec:
+  containers:
+  - name: alpine
+    image: alpine
+    command:
+    - sleep
+    - "9999999999"

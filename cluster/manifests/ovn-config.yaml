@@ -1,0 +1,11 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ovn-config
+  namespace: ovn-kubernetes
+data:
+  k8s_apiserver: https://192.168.66.101:6443
+  net_cidr:      10.128.0.0/14
+  svc_cidr:      10.96.0.0/12
+  OvnNorth:      tcp://192.168.66.101:6641
+  OvnSouth:      tcp://192.168.66.101:6642
