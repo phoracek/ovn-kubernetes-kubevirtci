@@ -38,7 +38,7 @@ absolute.
 
 ```shell
 cluster/kubectl.sh get pods
-cluster/kubectl.sh create -f $(pwd)/cluster/examples/pod-on-default.yml
+cluster/kubectl.sh create -f $(pwd)/cluster/examples/pod-on-default.yaml
 ```
 
 Collect to a node via ssh.
