@@ -94,4 +94,3 @@ subjects:
 - kind: ServiceAccount
   name: ovn
   namespace: ovn-kubernetes
-
