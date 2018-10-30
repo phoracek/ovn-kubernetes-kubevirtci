@@ -4,7 +4,7 @@ kind: Pod
 metadata:
   name: on-green
   annotations:
-   switches: 'green'
+   switches: '["green"]'
    k8s.v1.cni.cncf.io/networks: '[
             { "name": "green" }
     ]'
