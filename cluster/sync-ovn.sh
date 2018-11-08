@@ -22,13 +22,11 @@ function deploy {
     cluster/kubectl.sh delete --ignore-not-found -f $(pwd)/cluster/manifests/ovn-namespace.yaml
     cluster/kubectl.sh delete --ignore-not-found -f $(pwd)/cluster/manifests/ovn-config.yaml
     cluster/kubectl.sh delete --ignore-not-found -f $(pwd)/cluster/manifests/ovn-policy.yaml
-    cluster/kubectl.sh delete --ignore-not-found -f $(pwd)/cluster/manifests/sdn-ovs.yaml
-    cluster/kubectl.sh delete --ignore-not-found -f $(pwd)/cluster/manifests/ovnkube-master.yaml
     cluster/kubectl.sh delete --ignore-not-found -f $(pwd)/cluster/manifests/ovnkube.yaml
+    cluster/kubectl.sh delete --ignore-not-found -f $(pwd)/cluster/manifests/ovnkube-master.yaml
     cluster/kubectl.sh delete --ignore-not-found -n ovn-kubernetes ds netplugin-setup
 
     # Wait for all resources to be removed
-    until [[ $(cluster/kubectl.sh get --ignore-not-found -f $(pwd)/cluster/manifests/sdn-ovs.yaml 2>&1 | wc -l) -eq 0 ]]; do sleep 1; done
     until [[ $(cluster/kubectl.sh get --ignore-not-found -f $(pwd)/cluster/manifests/ovnkube-master.yaml 2>&1 | wc -l) -eq 0 ]]; do sleep 1; done
     until [[ $(cluster/kubectl.sh get --ignore-not-found -f $(pwd)/cluster/manifests/ovnkube.yaml 2>&1 | wc -l) -eq 0 ]]; do sleep 1; done
     until [[ $(cluster/kubectl.sh get --ignore-not-found -n ovn-kubernetes ds netplugin-setup 2>&1 | wc -l) -eq 0 ]]; do sleep 1; done
@@ -37,13 +35,11 @@ function deploy {
     cluster/kubectl.sh create -f $(pwd)/cluster/manifests/ovn-namespace.yaml
     cluster/kubectl.sh create -f $(pwd)/cluster/manifests/ovn-config.yaml
     cluster/kubectl.sh create -f $(pwd)/cluster/manifests/ovn-policy.yaml
-    cluster/kubectl.sh create -f $(pwd)/cluster/manifests/sdn-ovs.yaml
-    cluster/kubectl.sh create -f $(pwd)/cluster/manifests/ovnkube-master.yaml
     cluster/kubectl.sh create -f $(pwd)/cluster/manifests/ovnkube.yaml
-
-    until [[ $(cluster/kubectl.sh get --no-headers -f $(pwd)/cluster/manifests/ovnkube-master.yaml 2>&1 | awk '{ if ($3 == $4) print "1"; else print "0"}') -ne 0 ]]; do sleep 1; done
     until [[ $(cluster/kubectl.sh get --no-headers -f $(pwd)/cluster/manifests/ovnkube.yaml 2>&1 | awk '{ if ($3 == $4) print "1"; else print "0"}') -ne 0 ]]; do sleep 1; done
-    until [[ $(cluster/kubectl.sh get --no-headers -f $(pwd)/cluster/manifests/sdn-ovs.yaml 2>&1 | awk '{ if ($3 == $4) print "1"; else print "0"}') -ne 0 ]]; do sleep 1; done
+    sleep 30
+    cluster/kubectl.sh create -f $(pwd)/cluster/manifests/ovnkube-master.yaml
+    until [[ $(cluster/kubectl.sh get --no-headers -f $(pwd)/cluster/manifests/ovnkube-master.yaml 2>&1 | awk '{ if ($3 == $4) print "1"; else print "0"}') -ne 0 ]]; do sleep 1; done
 
     # Configure network plugins
     config_command=''
@@ -123,18 +119,3 @@ EOF
 
 echo Deploying
 deploy
-
-# TODO: For some reason, master sometimes fails to start up properly. My guess
-# is that it is a race between monitoring code that creates switches and routers
-# per Node and other code that uses them. Until it will be properly resolved, we
-# redeploy in case it fails.
-for _ in {1..3}; do
-    sleep 15
-    ovnkube_master=$(cluster/kubectl.sh -n ovn-kubernetes get pods | grep ovnkube-master | awk '{print $1}')
-    if cluster/kubectl.sh -n ovn-kubernetes logs $ovnkube_master | grep -q -e 'switch name not found' -e 'Failed to get k8s cluster router'; then
-        echo Redeploying: failed to create OVN logical resources
-        deploy
-    else
-        exit 0
-    fi
-done
